@@ -1,0 +1,12 @@
+import { chromium } from "@playwright/test";
+import { existsSync } from "fs";
+const exe = ["/opt/pw-browsers/chromium-1194/chrome-linux/chrome", "/opt/pw-browsers/chromium"].find(existsSync);
+const [,, view = "overview", out = "shot.png", width = "1440", scheme = "light"] = process.argv;
+const b = await chromium.launch({ executablePath: exe });
+const p = await b.newPage({ viewport: { width: +width, height: 900 }, colorScheme: scheme });
+const errs = []; p.on("pageerror", (e) => errs.push(e.message)); p.on("console", (m) => m.type() === "error" && errs.push(m.text()));
+await p.goto("file://" + process.cwd() + "/dist/index.html#" + view);
+await p.waitForTimeout(1200);
+await p.screenshot({ path: out, fullPage: true });
+console.log("errors:", errs.filter(e=>!/fonts/.test(e)));
+await b.close();
